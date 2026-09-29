@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AWS Insight - BMKG</title>
+<link rel="icon" type="image/png" href="Logo_BMKG_(2010).png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;font-size:13px;color:#333;background:#fff}
+button{font:inherit;cursor:pointer}
+/* ===== LANDING ===== */
+#landing{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:#fff}
+#landing .logo{width:200px;height:200px;object-fit:contain;margin-bottom:18px}
+#landing h1{margin:0 0 4px;font-size:22px;color:#0b3d6e}
+#landing p{margin:0 0 26px;color:#777}
+.btn-up{background:#1f7fc4;color:#fff;border:0;border-radius:4px;padding:12px 34px;font-size:15px;font-weight:600;box-shadow:0 2px 6px rgba(31,127,196,.3)}
+.btn-up:hover{background:#176aa6}
+#landing small{margin-top:14px;color:#999}
+/* Login box di landing */
+#loginBox{display:flex;flex-direction:column;gap:10px;width:min(320px,90vw);margin-top:6px;text-align:left}
+#loginBox label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#555;font-weight:600}
+#loginBox input{height:38px;border:1px solid #ccc;border-radius:4px;padding:0 10px;font:inherit;background:#fff}
+#loginBox input:focus{outline:2px solid #1f7fc4;border-color:#1f7fc4}
+#loginBtn{margin-top:4px}
+#loginBtn:disabled{opacity:.6;cursor:default}
+#loginErr{display:none;color:#c0392b;font-size:12px;text-align:center}
+#loginOk{color:#008a4c;font-size:12px;text-align:center;min-height:16px}
+.btn-out{background:none;border:1px solid #666;color:#fff;border-radius:3px;padding:4px 10px}
+.btn-out:hover{border-color:#fff}
+/* Bar user + tombol keluar di landing (tampil saat sudah login) */
+#userBar{display:flex;align-items:center;gap:10px;margin-top:16px}
+#userBar small{margin:0;color:#555}
+.btn-out-dark{background:#fff;border:1px solid #0b3d6e;color:#0b3d6e;border-radius:4px;padding:7px 20px;font-weight:600}
+.btn-out-dark:hover{background:#0b3d6e;color:#fff}
+/* From Uiverse.io by ShaikhWahid99 — dipakai sebagai overlay transisi landing → app */
+.liquid-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+  background: radial-gradient(circle at 50% 45%, #23233a, #12121c);
+  transition: opacity .45s ease, visibility .45s ease;
+}
+.liquid-loader.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-track {
+  position: relative;
+  width: 180px;
+  height: 32px;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.6),
+    0 1px 3px rgba(255, 255, 255, 0.1);
+}
+
+.liquid-fill {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: calc(100% - 4px);
+  background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899, #f59e0b);
+  border-radius: 14px;
+  animation:
+    fillProgress 4s ease-out infinite,
+    colorShift 3s linear infinite;
+  box-shadow:
+    0 0 12px rgba(124, 58, 237, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+.loading-text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  animation: textGlow 1s ease-in-out infinite;
+}
+
+.dot {
+  margin-left: 3px;
+  animation: blink 1.5s infinite;
+}
+.dot:nth-of-type(1) {
+  animation-delay: 0s;
+}
+.dot:nth-of-type(2) {
+  animation-delay: 0.3s;
+}
+.dot:nth-of-type(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes fillProgress {
+  0% {
+    width: 4px;
+  }
+  25% {
+    width: 25%;
+  }
+  50% {
+    width: 50%;
+  }
+  75% {
+    width: 75%;
+  }
+  100% {
+    width: calc(100% - 4px);
+  }
+}
+
+@keyframes colorShift {
+  0% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  33% {
+    filter: hue-rotate(120deg) brightness(1.1);
+  }
+  66% {
+    filter: hue-rotate(240deg) brightness(0.9);
+  }
+  100% {
+    filter: hue-rotate(360deg) brightness(1);
+  }
+}
+
+@keyframes textGlow {
+  0%,
+  100% {
+    opacity: 0.7;
+    text-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 16px rgba(139, 92, 246, 0.6);
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+
+/* ===== APP ===== */
+.nav{background:#1c1c1c;color:#fff;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.nav b{font-style:italic;font-size:18px;font-family:Georgia,serif}
+.nav button{background:none;border:1px solid #666;color:#fff;border-radius:3px;padding:4px 10px}
+.ph{padding:14px 16px;border-bottom:1px solid #e5e5e5;background:#f7f7f7}
+.ph h2{display:inline;margin:0;font-weight:400;font-size:20px}
+.ph span{color:#999;margin-left:8px}
+.fbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;padding:14px 16px;border-bottom:2px solid #3a8fc7}
+.fbar label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:#555}
+.fbar select,.fbar input[type=date]{height:32px;border:1px solid #ccc;border-radius:3px;padding:0 8px;font:inherit;background:#fff}
+.fbar select:disabled{background:#eee;color:#aaa}
+.fbar label[title] select{cursor:not-allowed}
+.fbar .chk{flex-direction:row;align-items:center;gap:6px;height:32px}
+.b{border:0;border-radius:3px;color:#fff;padding:0 16px;height:32px}
+.b.blue{background:#3a8fc7}.b.green{background:#00a65a}.b.grey{background:#8a8a8a}
+.wrap{padding:14px 16px}
+.sum h3{margin:0 0 8px;font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:6px}
+.card{border:1px solid #ddd;border-left:4px solid #3a8fc7;border-radius:3px;padding:7px 9px;background:#fafcff}
+.card small{display:block;color:#777}.card strong{font-size:18px}.card em{display:block;font-size:11px;color:#999;font-style:normal}
+.note{color:#888;font-size:12px;margin:4px 0 12px}
+.note i{display:inline-block;width:12px;height:12px;background:#fff3cd;border:1px solid #e0c96b;vertical-align:middle;margin-right:4px}
+.tw{overflow-x:auto;border:1px solid #ddd}
+table{border-collapse:collapse;width:100%;min-width:1100px}
+th,td{border:1px solid #ddd;padding:8px;text-align:left;white-space:nowrap}
+th{background:#fff;font-weight:700;vertical-align:bottom}
+th.s{cursor:pointer}
+tbody tr:hover{background:#f5f9fc}
+td.f{background:#fff3cd}
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pg button{border:1px solid #ddd;background:#fff;padding:6px 11px;margin-left:-1px;color:#555}
+.pg button.on{background:#3a8fc7;border-color:#3a8fc7;color:#fff}
+.pg button:disabled{color:#bbb;cursor:default}
+.top{display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;gap:8px;flex-wrap:wrap}
+.top select{height:28px}
+.basketbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.basket-cnt{font-size:12px;color:#555;background:#eef6fb;border:1px solid #bcd9ec;border-radius:12px;padding:3px 10px}
+.basket-cnt.has{background:#00a65a;color:#fff;border-color:#00a65a}
+.b:disabled{opacity:.55;cursor:default}
+th.ck,td.ck{text-align:center;width:34px}
+th.ck{background:#f7f7f7}
+td.bsk{background:#fff3cd}
+.basketnote{color:#888;font-size:12px;margin:-4px 0 8px}
+</style>
+</head>
+<body>
+  <div class="liquid-loader">
+  <div class="loading-text">
+    Loading<span class="dot">.</span><span class="dot">.</span
+    ><span class="dot">.</span>
+  </div>
+
+  <div class="loader-track">
+    <div class="liquid-fill"></div>
+  </div>
+</div>
+
+
+<!-- ===== HALAMAN 1: LANDING (login dulu, baru tombol unggah muncul) ===== -->
+<section id="landing">
+  <!-- Letakkan file logo bernama logo-bmkg.png di folder yang sama dengan file ini -->
+  <img class="logo" id="logo" src="Logo_BMKG_(2010).png" alt="Logo BMKG"
+       onerror="this.style.display='none';document.getElementById('logoSvg').style.display='block'">
+  <!-- Logo cadangan (placeholder) bila logo-bmkg.png belum ada -->
+  <svg id="logoSvg" class="logo" style="display:none" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="56" fill="#fff" stroke="#0b5aa6" stroke-width="6"/>
+    <path d="M14 72q23-22 46 0t46 0" fill="none" stroke="#1f9d55" stroke-width="6"/>
+    <text x="60" y="52" text-anchor="middle" font-size="24" font-weight="700" fill="#0b5aa6" font-family="Arial">BMKG</text>
+  </svg>
+  <h1>AWS Insight</h1>
+  <p>Badan Meteorologi, Klimatologi, dan Geofisika</p>
+
+  <!-- Tampil saat BELUM login -->
+  <div id="loginBox">
+    <label>Username
+      <input type="text" id="loginEmail" autocomplete="username" placeholder="Username">
+    </label>
+    <label>Password
+      <input type="password" id="loginPass" autocomplete="current-password" placeholder="Password">
+    </label>
+    <div id="loginErr"></div>
+    <button class="btn-up" id="loginBtn">Masuk</button>
+    <small id="loginOk"></small>
+  </div>
+
+  <!-- Tampil saat SUDAH login -->
+  <button class="btn-up" id="btnUp" onclick="$('file').click()" hidden>Unggah Data</button>
+  <small id="fmtHint" hidden>Format: .xlsx / .xls / .csv</small>
+  <div id="userBar" hidden>
+    <small id="whoami"></small>
+    <button class="btn-out-dark" id="logoutLanding">Keluar</button>
+  </div>
+</section>
+<input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+
+<!-- ===== HALAMAN 2: TAMPILAN DATA ===== -->
+<section id="app" hidden>
+  <div class="nav"><b>AWS Data</b><span style="display:flex;gap:8px"><button onclick="$('file').click()">Unggah Data Baru</button><button class="btn-out" id="logoutBtn">Keluar</button></span></div>
+  <div class="ph"><h2>Data Stasiun</h2><span id="stn"></span></div>
+
+  <div class="fbar">
+    <label>Tahun<select id="fy"></select></label>
+    <label>Tanggal dari<input type="date" id="fd1"></label>
+    <label>Tanggal sampai<input type="date" id="fd2"></label>
+    <label>Jam (UTC)<select id="fh"></select></label>
+    <label>Waktu Observasi
+      <select id="fo">
+        <option value="">Semua</option>
+        <option value="7">07.00</option>
+        <option value="13">13.00</option>
+        <option value="18">18.00</option>
+      </select>
+    </label>
+    <label>Tampilan
+      <select id="fm">
+        <option value="min">Per menit (semua data)</option>
+        <option value="hour">Maks per jam</option>
+        <option value="day">Maks per hari</option>
+        <option value="fklim71">Fklim71 (observasi -10 menit)</option>
+      </select>
+    </label>
+    <label class="chk"><input type="checkbox" id="ff" checked> Isi data kosong dari menit terdekat</label>
+    <button class="b blue" id="bv">View Data</button>
+    <button class="b grey" id="br">Reset</button>
+  </div>
+
+  <div class="wrap">
+    <div class="sum">
+      <h3 id="sh">Nilai Maksimum</h3>
+      <div class="cards" id="cards"></div>
+      <div class="note" id="nt"></div>
+    </div>
+    <div class="top">
+      <div>Show <select id="sz"><option>10</option><option>25</option><option>50</option><option>100</option></select> entries</div>
+      <div class="basketbar">
+        <span id="bc" class="basket-cnt">0 dipilih</span>
+        <button class="b grey" id="bclr">Kosongkan</button>
+        <button class="b green" id="bx">Export Excel</button>
+        <button class="b green" id="bxb" style="background:#008a4c">Export Excel (Pilihan)</button>
+      </div>
+    </div>
+    <div class="basketnote" id="bnote" hidden>Baris kuning = data yang ditambahkan ke pilihan.</div>
+    <div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+    <div class="foot">
+      <div id="info"></div>
+      <div class="pg" id="pg"></div>
+    </div>
+    <div style="margin-top:14px"><button class="b green" style="height:36px" id="bx">Export Excel</button></div>
+  </div>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+
+/* ---------- Loader: overlay transisi landing → app ---------- */
+const loader = document.querySelector('.liquid-loader');
+const showLoader = () => loader.classList.remove('done');
+const hideLoader = () => loader.classList.add('done');
+// Splash awal: sembunyikan loader begitu halaman selesai dimuat
+window.addEventListener('load', () => setTimeout(hideLoader, 500));
+
+/* ---------- Login session ---------- */
+let LOGGED_IN = false; // gerbang client-side: unggah hanya setelah login
+// Cek session ke server (/api/me): belum login → tampil form login;
+// sudah login → tombol Unggah muncul. Semua fitur data tetap jalan di browser.
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    const j = await r.json();
+    if (j.loggedIn) {
+      setLoggedInUI(j.user);
+    }
+  } catch {
+    // API tidak terjangkau (mis. dibuka langsung via file://) → tetap tampilkan form login
+  }
+}
+checkAuth();
+
+// Tampilkan kondisi "sudah login" di landing: tombol unggah + nama user + tombol keluar
+function setLoggedInUI(user) {
+  LOGGED_IN = true;
+  $('loginBox').hidden = true;
+  $('btnUp').hidden = false;
+  $('fmtHint').hidden = false;
+  $('whoami').textContent = user ? 'Login sebagai: ' + user : '';
+  $('userBar').hidden = false;
+  $('loginOk').textContent = ''; // bersihkan pesan logout
+}
+
+$('loginBtn').onclick = async () => {
+  const err = $('loginErr'), btn = $('loginBtn');
+  err.style.display = 'none';
+  const email = $('loginEmail').value.trim(), pass = $('loginPass').value;
+  if (!email || !pass) {
+    err.textContent = 'Isi username dan password.';
+    err.style.display = 'block';
+    return;
+  }
+  btn.disabled = true; btn.textContent = 'Memeriksa...';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) {
+      setLoggedInUI(j.user);
+    } else {
+      err.textContent = j.error || 'Login gagal. Coba lagi.';
+      err.style.display = 'block';
+    }
+  } catch {
+    err.textContent = 'Tidak dapat menghubungi server login.';
+    err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Masuk';
+};
+$('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+
+// Logout dari mana pun (landing maupun halaman data): kembali ke form login
+async function doLogout() {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  LOGGED_IN = false;
+  $('app').hidden = true;
+  $('landing').hidden = false;
+  $('btnUp').hidden = true;
+  $('fmtHint').hidden = true;
+  $('userBar').hidden = true;
+  $('loginBox').hidden = false;
+  $('loginPass').value = '';
+  $('loginOk').textContent = 'Anda telah keluar.';
+}
+$('logoutBtn').onclick = doLogout;
+$('logoutLanding').onclick = doLogout;
+
+// Nama kolom yang ditampilkan (kolom tak dikenal memakai nama aslinya)
+const LBL = {
+  rr:'Curah Hujan (mm)', ws_avg:'Wind Speed Avg (m/s)', ws_max:'Wind Speed Max (m/s)', wd_avg:'Wind Direction (°)',
+  tt_air_max:'Suhu Max (°C)', tt_air_avg:'Suhu Avg (°C)', tt_air_min:'Suhu Min (°C)', rh_avg:'Relatif Humidity (%)',
+  pp_air:'Tekanan Udara (mbar)', sr_avg:'Solar Radiation Avg (W/m²)', sr_max:'Solar Radiation Max (W/m²)',
+  wl:'Water Level (m)', tt_sea:'Water Temp (°C)'
+};
+const SKIP = /^(id\b|nama|latt?itude|longitude|lat$|lon$|no$)/i;
+
+let P = [], rows = [], view = [], L = [], desc = true, page = 1, size = 10;
+const basket = new Set();   // waktu (UTC menit) baris yang ditambahkan ke pilihan
+
+/* ---------- Baca waktu dari Excel (serial / "YYYY-MM-DD HH:MM" / "DD/MM/YYYY HH:MM") ---------- */
+function parseT(v) {
+  if (v == null || v === '') return null;
+  let y, mo, d, h, mi, m;
+  if (typeof v === 'number') {
+    const c = XLSX.SSF.parse_date_code(v + 1e-7);
+    if (!c) return null;
+    y = c.y; mo = c.m; d = c.d; h = c.H; mi = c.M;
+  } else {
+    const s = String(v).trim();
+    if ((m = s.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/))) { y = +m[1]; mo = +m[2]; d = +m[3]; h = +m[4]; mi = +m[5]; }
+    else if ((m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})/))) { d = +m[1]; mo = +m[2]; y = +m[3]; h = +m[4]; mi = +m[5]; }
+    else return null;
+  }
+  const date = `${y}-${pad(mo)}-${pad(d)}`;
+  return { y, mo, d, h, mi, date, t: `${date} ${pad(h)}:${pad(mi)}`, ts: Date.UTC(y, mo - 1, d, h, mi) / 6e4 };
+}
+
+/* ---------- Unggah file ---------- */
+$('file').addEventListener('change', e => { if (e.target.files[0]) load(e.target.files[0]); e.target.value = ''; });
+$('landing').addEventListener('dragover', e => e.preventDefault());
+$('landing').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); });
+
+async function load(f) {
+  if (!LOGGED_IN) { alert('Silakan login terlebih dahulu.'); return; }
+  showLoader();
+  await new Promise(r => requestAnimationFrame(() => setTimeout(r, 350))); // beri waktu animasi loader tampil
+  try {
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const a = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null });
+    const H = a[0].map(x => String(x ?? '').trim());
+    const ti = H.findIndex(h => /tanggal|waktu|time|date/i.test(h));
+    if (ti < 0) throw new Error('Kolom waktu (Tanggal / Waktu) tidak ditemukan pada baris pertama.');
+    const ni = H.findIndex(h => /nama/i.test(h)), ii = H.findIndex(h => /^id\b/i.test(h));
+    const num = v => (v == null || v === '' || !isFinite(Number(v))) ? null : Number(v);
+    const cols = H.map((h, i) => i).filter(i => i !== ti && H[i] && !SKIP.test(H[i]) && a.slice(1, 3000).some(r => num(r[i]) !== null));
+    P = cols.map(i => ({ i, name: LBL[H[i]] || H[i] }));
+    rows = [];
+    for (const r of a.slice(1)) {
+      const t = parseT(r[ti]);
+      if (!t) continue;
+      t.raw = cols.map(i => num(r[i])); t.val = []; t.fl = [];
+      rows.push(t);
+    }
+    if (!rows.length) throw new Error('Tidak ada baris data waktu yang valid.');
+    rows.sort((x, y) => x.ts - y.ts);
+    const r1 = a[1] || [];
+    $('stn').textContent = [ni >= 0 ? r1[ni] : '', ii >= 0 ? '(' + r1[ii] + ')' : '', f.name].filter(Boolean).join(' ');
+    initFilters();
+    $('landing').hidden = true; $('app').hidden = false;   // langsung pindah ke halaman data
+    show();
+    hideLoader();
+  } catch (err) { hideLoader(); alert('Gagal membaca file: ' + err.message); }
+}
+
+/* ---------- Isi data kosong dari menit terdekat (per parameter) ---------- */
+function applyFill(on) {
+  const n = rows.length;
+  P.forEach((_, c) => {
+    const pv = new Array(n), nx = new Array(n);
+    let l = -1;
+    for (let i = 0; i < n; i++) { if (rows[i].raw[c] != null) l = i; pv[i] = l; }
+    l = -1;
+    for (let i = n - 1; i >= 0; i--) { if (rows[i].raw[c] != null) l = i; nx[i] = l; }
+    for (let i = 0; i < n; i++) {
+      const r = rows[i];
+      if (r.raw[c] != null || !on) { r.val[c] = r.raw[c]; r.fl[c] = false; continue; }
+      const a = pv[i], b = nx[i];
+      const j = a < 0 ? b : b < 0 ? a : (r.ts - rows[a].ts <= rows[b].ts - r.ts ? a : b);
+      r.val[c] = j < 0 ? null : rows[j].raw[c]; r.fl[c] = j >= 0;
+    }
+  });
+}
+
+/* ---------- Filter ---------- */
+function initFilters() {
+  const yrs = [...new Set(rows.map(r => r.y))];
+  $('fy').innerHTML = '<option value="">Semua</option>' + yrs.map(y => `<option>${y}</option>`).join('');
+  $('fh').innerHTML = '<option value="">Semua</option>' + [...Array(24).keys()].map(h => `<option value="${h}">${pad(h)}:00 - ${pad(h)}:59</option>`).join('');
+  $('fm').value = 'min'; $('ff').checked = true; $('fh').disabled = false;
+  setDates();
+}
+function setDates() {
+  const y = $('fy').value, s = rows.filter(r => !y || r.y == y);
+  $('fd1').value = $('fd1').min = $('fd2').min = s[0].date;
+  $('fd2').value = $('fd1').max = $('fd2').max = s[s.length - 1].date;
+}
+$('fy').onchange = setDates;
+$('fm').onchange = () => { $('fh').disabled = $('fm').value === 'fklim71'; };
+$('br').onclick = () => { initFilters(); show(); };
+$('bv').onclick = show;
+$('sz').onchange = () => { size = +$('sz').value; page = 1; renderTable(); };
+
+const fmtT = r => `${pad(r.d)}/${pad(r.mo)}/${r.y} ${pad(r.h)}:${pad(r.mi)}:00`;
+
+function agg(list, keyFn, dispFn) {
+  const m = new Map();
+  for (const r of list) {
+    const k = keyFn(r);
+    let o = m.get(k);
+    if (!o) { o = { k, disp: dispFn(r), val: P.map(() => null), fl: P.map(() => false) }; m.set(k, o); }
+    r.val.forEach((v, i) => { if (v != null && (o.val[i] == null || v > o.val[i])) o.val[i] = v; });
+  }
+  return [...m.values()];
+}
+
+function show() {
+  applyFill($('ff').checked);
+  const y = $('fy').value, d1 = $('fd1').value, d2 = $('fd2').value, h = $('fh').value, o = $('fo').value, m = $('fm').value;
+  if (m === 'fklim71') {
+    // Fklim71: 1 data per waktu observasi per hari. Dicari di jendela 10 menit sebelum jam observasi
+    // (06:50-07.00, 12:50-13.00, 17:50-18.00); dipakai data tepat di jam observasi, bila kosong diambil
+    // dari menit terdekat di dalam jendela (06:59, 06:58, dst.).
+    const obs = o === '' ? [7, 13, 18] : [+o];
+    const inWin = rows.filter(r => (!y || r.y == y) && (!d1 || r.date >= d1) && (!d2 || r.date <= d2));
+    const g = new Map();
+    for (const r of inWin) {
+      const om = r.h * 60 + r.mi;
+      for (const ob of obs) {
+        const d = ob * 60 - om;              // 0 = tepat jam observasi, 10 = 10 menit sebelumnya
+        if (d < 0 || d > 10) continue;
+        const k = r.date + '|' + ob, c = g.get(k);
+        if (!c || d < c.d) g.set(k, { r, d });
+      }
+    }
+    L = [...g.values()].map(v => v.r).sort((a, b) => a.ts - b.ts);
+  } else {
+    L = rows.filter(r => (!y || r.y == y) && (!d1 || r.date >= d1) && (!d2 || r.date <= d2) && (h === '' || r.h == +h) && (o === '' || r.h == +o));
+  }
+  if (m === 'min' || m === 'fklim71') view = L.map(r => ({ k: r.t, disp: fmtT(r), val: r.val, fl: r.fl }));
+  else if (m === 'hour') view = agg(L, r => r.t.slice(0, 13), r => `${pad(r.d)}/${pad(r.mo)}/${r.y} ${pad(r.h)}:00 - ${pad(r.h)}:59 (maks)`);
+  else view = agg(L, r => r.date, r => `${pad(r.d)}/${pad(r.mo)}/${r.y} (maks harian)`);
+  if (desc) view.reverse();
+  page = 1;
+  renderSummary(); renderHead(); renderTable();
+}
+
+/* ---------- Nilai maksimum semua parameter (beserta waktu kejadian) ---------- */
+function renderSummary() {
+  $('sh').textContent = `Nilai Maksimum (${L.length.toLocaleString('id-ID')} data menit)`;
+  $('cards').innerHTML = P.map((p, c) => {
+    let best = null, at = null;
+    for (const r of L) { const v = r.val[c]; if (v != null && (best === null || v > best)) { best = v; at = r; } }
+    return `<div class="card"><small>${p.name}</small><strong>${best === null ? '-' : +best.toFixed(3)}</strong><em>${at ? fmtT(at) : ''}</em></div>`;
+  }).join('');
+  let nf = 0; L.forEach(r => r.fl.forEach(f => { if (f) nf++; }));
+  const fkn = $('fm').value === 'fklim71' ? 'Fklim71: 1 data per waktu observasi (07.00, 13.00, 18.00) per hari — bila kosong, diambil dari menit terdekat maksimal 10 menit sebelumnya.' : '';
+  $('nt').innerHTML = fkn + (nf ? `${fkn ? ' ' : ''}<i></i>${nf.toLocaleString('id-ID')} sel kosong diisi otomatis dari menit terdekat.` : '');
+}
+
+/* ---------- Tabel (dengan kolom pilihan / basket pada tampilan per menit) ---------- */
+const isMin = () => $('fm').value === 'min' || $('fm').value === 'fklim71';
+  function renderHead() {
+  const bk = isMin();
+  $('th').innerHTML = '<tr>' + (bk ? '<th class="ck" title="Pilih semua di halaman ini"><input type="checkbox" id="ckall"></th>' : '') +
+    '<th class="s" id="tsort" title="Klik untuk urutkan">Waktu (UTC) ' + (desc ? '▼' : '▲') + '</th>' +
+    P.map(p => `<th>${p.name.replace(' (', '<br>(')}</th>`).join('') + '</tr>';
+  $('tsort').onclick = () => { desc = !desc; view.reverse(); page = 1; renderHead(); renderTable(); };
+  if (bk) $('ckall').onchange = e => {
+    const s = (page - 1) * size;
+    view.slice(s, s + size).forEach(r => e.target.checked ? basket.add(r.k) : basket.delete(r.k));
+    renderTable();
+  };
+}
+function renderTable() {
+  const n = view.length, tot = Math.max(1, Math.ceil(n / size));
+  const s = (page - 1) * size, sl = view.slice(s, s + size), bk = isMin();
+  $('tb').innerHTML = n ? sl.map(r => '<tr' + (bk && basket.has(r.k) ? ' class="bsk"' : '') + '>' +
+    (bk ? `<td class="ck"><input type="checkbox" class="ckrow" data-k="${r.k}"${basket.has(r.k) ? ' checked' : ''}></td>` : '') +
+    '<td>' + r.disp + '</td>' +
+    r.val.map((v, i) => `<td${r.fl[i] ? ' class="f"' : ''}>${v == null ? '-' : +v.toFixed(3)}</td>`).join('') + '</tr>').join('')
+    : `<tr><td colspan="${P.length + 2}" style="text-align:center;color:#999;padding:24px">Tidak ada data pada filter ini</td></tr>`;
+  const ca = $('ckall');
+  if (ca) ca.checked = n > 0 && sl.every(r => basket.has(r.k));
+  renderBasket();
+  $('info').textContent = n ? `Showing ${s + 1} to ${Math.min(s + size, n)} of ${n.toLocaleString('id-ID')} entries` : 'Showing 0 entries';
+  const a = Math.max(1, Math.min(page - 2, tot - 4)), b = Math.min(tot, a + 4);
+  let h = `<button data-p="${page - 1}" ${page === 1 ? 'disabled' : ''}>← Previous</button>`;
+  for (let i = a; i <= b; i++) h += `<button data-p="${i}" class="${i === page ? 'on' : ''}">${i}</button>`;
+  h += `<button data-p="${page + 1}" ${page === tot ? 'disabled' : ''}>Next →</button>`;
+  $('pg').innerHTML = h;
+}
+$('pg').onclick = e => { const p = e.target.dataset.p; if (p && !e.target.disabled) { page = +p; renderTable(); } };
+
+/* ---------- Basket (tambahkan ke pilihan) ---------- */
+function renderBasket() {
+  const n = basket.size;
+  $('bc').textContent = n.toLocaleString('id-ID') + ' dipilih';
+  $('bc').classList.toggle('has', n > 0);
+  $('bnote').hidden = !(n && isMin());
+  $('bxb').disabled = !n;
+}
+$('tb').addEventListener('change', e => {
+  const cb = e.target.closest('input.ckrow');
+  if (!cb) return;
+  cb.checked ? basket.add(cb.dataset.k) : basket.delete(cb.dataset.k);
+  renderTable();
+});
+$('bclr').onclick = () => { if (basket.size) { basket.clear(); renderTable(); } };
+
+/* ---------- Ekspor Excel khusus baris pilihan ---------- */
+$('bxb').onclick = () => {
+  if (!basket.size) return alert('Belum ada baris yang ditambahkan ke pilihan.');
+  const bl = L.filter(r => basket.has(r.t));   // urut waktu naik, mengikuti filter aktif
+  if (!bl.length) return alert('Semua baris pilihan berada di luar filter saat ini. Sesuaikan filter (tahun/tanggal/jam) lalu ekspor lagi.');
+  const data = [['Waktu (UTC)', ...P.map(p => p.name)], ...bl.map(r => [fmtT(r), ...r.val.map(v => v == null ? '' : v)])];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'Pilihan');
+  XLSX.writeFile(wb, `AWS_Pilihan_${bl.length}baris.xlsx`);
+};
+
+/* ---------- Ekspor ke Excel (semua data hasil filter + sheet nilai maks) ---------- */
+$('bx').onclick = () => {
+  if (!view.length) return alert('Tidak ada data untuk diekspor.');
+  const data = [['Waktu (UTC)', ...P.map(p => p.name)], ...view.map(r => [r.disp, ...r.val.map(v => v == null ? '' : v)])];
+  const mx = [['Parameter', 'Nilai Maksimum', 'Waktu (UTC)']];
+  P.forEach((p, c) => {
+    let best = null, at = null;
+    for (const r of L) { const v = r.val[c]; if (v != null && (best === null || v > best)) { best = v; at = r; } }
+    mx.push([p.name, best === null ? '' : best, at ? fmtT(at) : '']);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), 'Data');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(mx), 'Nilai Maks');
+  XLSX.writeFile(wb, `AWS_${$('fm').value}_${$('fd1').value}_${$('fd2').value}.xlsx`);
+};
+</script>
+</body>
+</html>
